@@ -13,7 +13,7 @@
 ## Requirements📝
 * [rust]('https://www.rust-lang.org/')
 
-## Installation🛠️
+## Installation🔧
 ```sh
 git clone https://github.com/Skardyy/Rhiza
 cd rhiza
