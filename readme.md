@@ -1,6 +1,6 @@
 # Rhiza: a blazingly fast app linker 🚀
-
-## Table of Content  
+only made for windows (linux has way better options already)
+### Table of Content  
 * [Requirements](#Requirements)
 * [Installation](#Installation)
 * [Usage](#Usage)
@@ -10,19 +10,19 @@
   * [Edit](#Edit)
   * [Run](#Run)
 
-## Requirements📝
-* [rust]('https://www.rust-lang.org/')
+# Requirements📝
+* [rust](https://www.rust-lang.org/)
 
-## Installation🔧
+# Installation🔧
 ```sh
 git clone https://github.com/Skardyy/Rhiza
 cd rhiza
 cargo build --release
-./installer.ps1
+./target/release/rhz install
 ```
 
-## Usage💡
-#### Crawl
+# Usage💡
+### Crawl
 ```sh
 rhz crawl
 ```

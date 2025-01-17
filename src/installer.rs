@@ -1,0 +1,121 @@
+use colored::Colorize;
+use shellexpand::tilde;
+use std::fs;
+use std::io;
+use std::path::Path;
+use winreg::enums::*;
+use winreg::RegKey;
+
+fn check(config_path: &str) -> io::Result<()> {
+    // Check if the .rhiza directory exists
+    let rhiza_dir = tilde("~/.rhiza").to_string();
+    let config_file = Path::new(&rhiza_dir).join("config.json");
+
+    let mut needs_setup = false;
+
+    // Check if the .rhiza directory exists
+    if !Path::new(&rhiza_dir).exists() {
+        println!(
+            "{}",
+            ".rhiza directory does not exist, running setup...".yellow()
+        );
+        needs_setup = true;
+    }
+
+    // Check if the config.json file exists
+    if !config_file.exists() {
+        println!(
+            "{}",
+            "config.json does not exist, running setup...".yellow()
+        );
+        needs_setup = true;
+    }
+
+    // Check if the new path is already in the PATH
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let environment_key = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
+    let current_path: String = environment_key.get_value("Path")?;
+
+    if !current_path.split(';').any(|path| path == config_path) {
+        needs_setup = true;
+    }
+
+    if needs_setup {
+        setup_rhiza_config()?;
+        add_to_path_permanently(config_path)?;
+    }
+    Ok(())
+}
+
+fn add_to_path_permanently(new_path: &str) -> io::Result<()> {
+    // Open the environment variables key in the registry for the current user
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let environment_key = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
+
+    // Get the current PATH value
+    let current_path: String = environment_key.get_value("Path")?;
+
+    // Check if the new path is already in the PATH
+    if !current_path.split(';').any(|path| path == new_path) {
+        // Append the new path to the existing PATH
+        let new_path_value = if current_path.ends_with(';') {
+            format!("{}{}", current_path, new_path)
+        } else {
+            format!("{};{}", current_path, new_path)
+        };
+
+        // Set the new PATH value in the registry
+        environment_key.set_value("Path", &new_path_value)?;
+
+        // Notify the system that the environment variables have changed
+        unsafe {
+            winapi::um::winuser::SendMessageTimeoutA(
+                winapi::um::winuser::HWND_BROADCAST,
+                winapi::um::winuser::WM_SETTINGCHANGE,
+                0 as winapi::shared::minwindef::WPARAM,
+                "Environment\0".as_ptr() as winapi::shared::minwindef::LPARAM,
+                winapi::um::winuser::SMTO_ABORTIFHUNG,
+                5000,
+                std::ptr::null_mut(),
+            );
+        }
+
+        let msg = format!("Successfully added '{}' to the PATH.", new_path).green();
+        println!("{}", msg);
+    } else {
+        let msg = format!("'{}' is already in the PATH, skipping.", new_path).yellow();
+        println!("{}", msg);
+    }
+
+    Ok(())
+}
+
+fn setup_rhiza_config() -> io::Result<()> {
+    // Resolve the home directory using shellexpand
+    let rhiza_dir = tilde("~/.rhiza").to_string();
+    let config_file = Path::new(&rhiza_dir).join("config.json");
+
+    // Create the .rhiza directory if it doesn't exist
+    if !Path::new(&rhiza_dir).exists() {
+        fs::create_dir(&rhiza_dir)?;
+        let msg = format!("Created directory: {:?}", rhiza_dir).green();
+        println!("{}", msg);
+    } else {
+        let msg = format!("Directory already exists: {:?}, skipping", rhiza_dir).yellow();
+        println!("{}", msg);
+    }
+
+    // Create the config.json file if it doesn't exist
+    if !config_file.exists() {
+        let default_config = r#"{}"#;
+        fs::write(&config_file, default_config)?;
+
+        let msg = format!("Created file: {:?}", config_file).green();
+        println!("{}", msg);
+    } else {
+        let msg = format!("File already exists: {:?}, skipping", config_file).yellow();
+        println!("{}", msg);
+    }
+
+    Ok(())
+}

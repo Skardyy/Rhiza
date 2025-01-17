@@ -1,0 +1,1 @@
+* continue the check function (make it return the config) and put the check function before any command
