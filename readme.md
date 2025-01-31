@@ -72,7 +72,7 @@ rhz run
 ```
 https://github.com/user-attachments/assets/d3e529c3-fbc7-45dd-80f8-341c012fecaa
 
-it will create the bin and src files and allow you to use your shortcuts in the shell
+it will create the bin and src files and allow you to use your shortcuts in the shell and in the widnows menu! (`⊞ Win`)
   
 > [!Tip]
 > did you know?  
