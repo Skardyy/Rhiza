@@ -42,16 +42,19 @@ fn main() {
         Some(("crawl", sub_matches)) => {
             let path = sub_matches.get_one::<String>("path");
 
-            if let Some(_p) = path {
-            } else {
-                let _items = worker::crawl_directory(vec![
+            let dirs = match path {
+                None => vec![
                     "~\\Desktop",
                     "~\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu",
                     "C:\\ProgramData\\Microsoft\\Windows\\Start Menu",
-                ]);
-                println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
-            }
-            // Call your crawl function here
+                ],
+                Some(p) => {
+                    let dir: &str = &p;
+                    vec![dir]
+                }
+            };
+            let _ = worker::crawl_directory(dirs);
+            println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
         }
         Some(("add", _)) => {
             let mut config = installer::check().unwrap();
