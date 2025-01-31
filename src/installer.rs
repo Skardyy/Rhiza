@@ -43,10 +43,13 @@ impl Config {
 }
 
 pub fn copy_src() -> std::io::Result<()> {
-    let src = shellexpand::tilde("~\\.rhiza\\src").to_string();
+    let user_dir = shellexpand::tilde("~").to_string();
+    let src = format!("{}\\.rhiza\\src", user_dir);
     let src = Path::new(&src);
-    let target =
-        "C:\\Users\\meron\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\rhiza";
+    let target = format!(
+        "{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\rhiza",
+        user_dir
+    );
     let target = Path::new(&target);
 
     if !target.exists() {
