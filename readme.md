@@ -17,8 +17,7 @@ only made for windows (linux has way better options already)
 ```sh
 git clone https://github.com/Skardyy/Rhiza
 cd rhiza
-cargo build --release
-./target/release/rhz install
+cargo run --release -- install
 ```
 
 # Usage💡
@@ -26,29 +25,28 @@ cargo build --release
 ```sh
 rhz crawl
 ```
-to find potential apps to link  
-defaults to (recursive):
+https://github.com/user-attachments/assets/61b4cee4-70f5-4f0d-9e24-a7b06efacd4a
+
+to find potential apps to link (walks recursively)
+defaults:
 * ~\Desktop
 * ~\AppData\Roaming\Microsoft\Windows\Start Menu
 * C:\ProgramData\Microsoft\Windows\Start Menu
+there are more filtering and logic to prompt the user only for relevant apps to link
   
-you will be prompted for new apps you didn't link to before
+you will be prompted for new apps you didn't link to before (apps you said no before won't be prompted again)
   
 you can also
 ```sh
 rhz crawl -p "/path/to/dir"
 ```
-and to crawl recursively
-```sh
-rhz crawl -p "path/to/dir" -r
-```
 
 ### Add
-you can add apps to link manually (why tho)
+you can search for a single app across the entire file-system
+```sh
+rhz add
 ```
-rhz add -p "path/to/app"
-```
-once again you will be prompted if the app is not linked already
+https://github.com/user-attachments/assets/8fad0bf8-0390-4471-a5c4-39f9d0c22117
 
 ### View
 you can view all linked apps and their config
@@ -62,14 +60,19 @@ or maybe you want to edit the config
 ```
 rhz edit
 ```
-it will open the config in your preferred editor
+it will open the ~/.rhiza/ folder where you can:
+* delete the bat files from the bin dir (what is called to open the shortcut)
+* delete the url/lnk file from the src dir (what the bat file is pointing to)
+* edit the config to not automatically re add the deleted items
 
 ### Run
 finally you can create the lnk files using
 ```
 rhz run
 ```
-it will create the lnk files and allow you to use your shortcuts in shell and in the quick access menu
+https://github.com/user-attachments/assets/d3e529c3-fbc7-45dd-80f8-341c012fecaa
+
+it will create the bin and src files and allow you to use your shortcuts in the shell
   
 > [!Tip]
 > did you know?  
