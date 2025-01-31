@@ -71,6 +71,6 @@ rhz run
 ```
 it will create the lnk files and allow you to use your shortcuts in shell and in the quick access menu
   
-> \[!Tip]
+> [!Tip]
 > did you know?  
 > Rhiza is the spirit of roots and growth, embodying the hidden strength and connection of the earth. 🌱🌿

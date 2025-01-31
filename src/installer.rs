@@ -1,4 +1,6 @@
 use colored::Colorize;
+use lnk_parser::LNKParser;
+use serde_derive::{Deserialize, Serialize};
 use shellexpand::tilde;
 use std::fs;
 use std::io;
@@ -6,9 +8,29 @@ use std::path::Path;
 use winreg::enums::*;
 use winreg::RegKey;
 
-fn check(config_path: &str) -> io::Result<()> {
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Config {
+    pub commands: std::collections::HashMap<String, String>,
+    pub skipped: Vec<String>,
+}
+
+impl Config {
+    pub fn expand(&self) -> Vec<String> {
+        let mut res = Vec::new();
+
+        for (_key, path) in &self.commands {
+            if let Some(lnk_result) = read_shortcut(path) {
+                res.push(lnk_result);
+            }
+        }
+
+        res
+    }
+}
+
+pub fn check() -> io::Result<Config> {
     // Check if the .rhiza directory exists
-    let rhiza_dir = tilde("~/.rhiza").to_string();
+    let rhiza_dir = tilde("~\\.rhiza").to_string();
     let config_file = Path::new(&rhiza_dir).join("config.json");
 
     let mut needs_setup = false;
@@ -36,15 +58,20 @@ fn check(config_path: &str) -> io::Result<()> {
     let environment_key = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;
     let current_path: String = environment_key.get_value("Path")?;
 
-    if !current_path.split(';').any(|path| path == config_path) {
+    let bin_dir = rhiza_dir + "\\bin";
+    if !current_path.split(';').any(|path| path == bin_dir) {
         needs_setup = true;
     }
 
     if needs_setup {
         setup_rhiza_config()?;
-        add_to_path_permanently(config_path)?;
+        add_to_path_permanently(&bin_dir)?;
+        return check();
+    } else {
+        let config_contents = fs::read_to_string(&config_file)?;
+        let config: Config = serde_json::from_str(&config_contents).unwrap_or_default();
+        Ok(config)
     }
-    Ok(())
 }
 
 fn add_to_path_permanently(new_path: &str) -> io::Result<()> {
@@ -118,4 +145,35 @@ fn setup_rhiza_config() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+pub fn read_shortcut(lnk_path: &str) -> Option<String> {
+    if lnk_path.ends_with(".lnk") {
+        match LNKParser::from_path(lnk_path) {
+            Ok(link) => return link.get_target_full_path().clone(),
+            Err(_) => {
+                return None;
+            }
+        };
+    } else if lnk_path.ends_with(".url") {
+        match fs::read_to_string(lnk_path) {
+            Ok(content) => {
+                let lines = content.lines();
+                let mut in_internet_shortcut_section = false;
+                for line in lines {
+                    if line.trim() == "[InternetShortcut]" {
+                        in_internet_shortcut_section = true;
+                        continue;
+                    }
+
+                    if in_internet_shortcut_section && line.starts_with("URL=") {
+                        let url = line.trim_start_matches("URL=").trim().to_string();
+                        return Some(url);
+                    }
+                }
+            }
+            Err(_) => return None,
+        }
+    }
+    None
 }

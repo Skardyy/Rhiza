@@ -2,7 +2,7 @@ mod installer;
 mod worker;
 use clap::{
     builder::{styling::AnsiColor, Styles},
-    Arg, ArgAction, ColorChoice, Command,
+    Arg, ColorChoice, Command,
 };
 use colored::*;
 
@@ -25,13 +25,6 @@ fn main() {
                         .long("path")
                         .value_name("PATH")
                         .help("Specify a directory to crawl"),
-                )
-                .arg(
-                    Arg::new("recursive")
-                        .short('r')
-                        .long("recursive")
-                        .action(ArgAction::SetTrue)
-                        .help("Crawl directories recursively"),
                 ),
         )
         .subcommand(
@@ -55,15 +48,14 @@ fn main() {
     match matches.subcommand() {
         Some(("crawl", sub_matches)) => {
             let path = sub_matches.get_one::<String>("path");
-            let recursive = sub_matches.get_flag("recursive");
 
-            if let Some(p) = path {
-                println!("Crawling directory: {}", p);
-                if recursive {
-                    println!("Recursive mode enabled");
-                }
+            if let Some(_p) = path {
             } else {
-                let _items = worker::crawl_directory("~\\Desktop");
+                let _items = worker::crawl_directory(vec![
+                    "~\\Desktop",
+                    "~\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu",
+                    "C:\\ProgramData\\Microsoft\\Windows\\Start Menu",
+                ]);
                 println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
             }
             // Call your crawl function here
@@ -82,8 +74,7 @@ fn main() {
             // Call your edit function here
         }
         Some(("run", _)) => {
-            println!("Creating lnk files");
-            // Call your run function here
+            worker::run().unwrap();
         }
         Some(("install", _)) => {
             println!("Installing");
