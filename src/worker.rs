@@ -38,6 +38,7 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
             "Node.js",
             "Administrative Tools",
             "Python",
+            "rhiza",
         ];
         for entry in WalkDir::new(expanded_dir)
             .into_iter()
@@ -102,7 +103,6 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
         }
     }
 
-    // extend and write
     match config.write() {
         Ok(_) => return Ok(executables),
         Err(err) => return Err(InquireError::IO(err)),
@@ -188,6 +188,7 @@ pub fn run() -> io::Result<()> {
 
     generate_batch_files(&rhiza_src, &rhiza_bin)?;
     println!("{}", "Done writing bat files".purple());
+    installer::copy_src()?;
 
     Ok(())
 }

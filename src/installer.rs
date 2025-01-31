@@ -42,6 +42,27 @@ impl Config {
     }
 }
 
+pub fn copy_src() -> std::io::Result<()> {
+    let src = shellexpand::tilde("~\\.rhiza\\src").to_string();
+    let src = Path::new(&src);
+    let target =
+        "C:\\Users\\meron\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\rhiza";
+    let target = Path::new(&target);
+
+    if !target.exists() {
+        fs::create_dir_all(target)?;
+    }
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let src_path = entry.path();
+        let dest_path = target.join(entry.file_name());
+
+        fs::copy(&src_path, &dest_path)?;
+    }
+
+    Ok(())
+}
+
 pub fn check() -> io::Result<Config> {
     // Check if the .rhiza directory exists
     let rhiza_dir = tilde("~\\.rhiza").to_string();
