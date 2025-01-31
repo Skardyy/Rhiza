@@ -23,8 +23,22 @@ impl Config {
                 res.push(lnk_result);
             }
         }
+        for path in self.skipped.iter() {
+            if let Some(lnk_result) = read_shortcut(path) {
+                res.push(lnk_result);
+            }
+        }
 
         res
+    }
+
+    pub fn write(&self) -> Result<(), io::Error> {
+        let rhiza_dir = tilde("~/.rhiza").to_string();
+        let config_file = Path::new(&rhiza_dir).join("config.json");
+        let content = serde_json::to_string_pretty(&self)?;
+        fs::write(config_file, content)?;
+
+        Ok(())
     }
 }
 
@@ -149,30 +163,24 @@ fn setup_rhiza_config() -> io::Result<()> {
 
 pub fn read_shortcut(lnk_path: &str) -> Option<String> {
     if lnk_path.ends_with(".lnk") {
-        match LNKParser::from_path(lnk_path) {
-            Ok(link) => return link.get_target_full_path().clone(),
-            Err(_) => {
-                return None;
-            }
-        };
+        if let Ok(link) = LNKParser::from_path(lnk_path) {
+            return link.get_target_full_path().clone();
+        }
     } else if lnk_path.ends_with(".url") {
-        match fs::read_to_string(lnk_path) {
-            Ok(content) => {
-                let lines = content.lines();
-                let mut in_internet_shortcut_section = false;
-                for line in lines {
-                    if line.trim() == "[InternetShortcut]" {
-                        in_internet_shortcut_section = true;
-                        continue;
-                    }
+        if let Ok(content) = fs::read_to_string(lnk_path) {
+            let lines = content.lines();
+            let mut in_internet_shortcut_section = false;
+            for line in lines {
+                if line.trim() == "[InternetShortcut]" {
+                    in_internet_shortcut_section = true;
+                    continue;
+                }
 
-                    if in_internet_shortcut_section && line.starts_with("URL=") {
-                        let url = line.trim_start_matches("URL=").trim().to_string();
-                        return Some(url);
-                    }
+                if in_internet_shortcut_section && line.starts_with("URL=") {
+                    let url = line.trim_start_matches("URL=").trim().to_string();
+                    return Some(url);
                 }
             }
-            Err(_) => return None,
         }
     }
     None

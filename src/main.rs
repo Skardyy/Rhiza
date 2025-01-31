@@ -1,10 +1,14 @@
 mod installer;
+mod searcher;
 mod worker;
+use std::path::Path;
+
 use clap::{
     builder::{styling::AnsiColor, Styles},
     Arg, ColorChoice, Command,
 };
 use colored::*;
+use inquire::{Select, Text};
 
 fn main() {
     let matches = Command::new("Rhiza")
@@ -27,18 +31,7 @@ fn main() {
                         .help("Specify a directory to crawl"),
                 ),
         )
-        .subcommand(
-            Command::new("add")
-                .about("Add an app to link manually")
-                .arg(
-                    Arg::new("path")
-                        .short('p')
-                        .long("path")
-                        .value_name("PATH")
-                        .required(true)
-                        .help("Path to the app to add"),
-                ),
-        )
+        .subcommand(Command::new("add").about("Search for a single app to add"))
         .subcommand(Command::new("view").about("View all linked apps and their config"))
         .subcommand(Command::new("edit").about("Edit the config"))
         .subcommand(Command::new("run").about("Create the lnk files"))
@@ -60,25 +53,58 @@ fn main() {
             }
             // Call your crawl function here
         }
-        Some(("add", sub_matches)) => {
-            let path = sub_matches.get_one::<String>("path").unwrap();
-            println!("Adding app at path: {}", path);
-            // Call your add function here
+        Some(("add", _)) => {
+            let mut config = installer::check().unwrap();
+            let name = Text::new("what to search for?").prompt().unwrap();
+
+            let optimizer = searcher::FileSearchOptimizer::new();
+            let matches = optimizer.find_top_matches(&name, 5);
+
+            let options = matches
+                .iter()
+                .map(|f| format!("{} ({})", f.path.display(), f.formatted_last_modified()))
+                .collect();
+
+            let ans = Select::new("choose the best match", options)
+                .prompt()
+                .unwrap();
+            let ans = ans.split_once(" (").map(|(name, _)| name).unwrap();
+            if let Ok(name) = Text::new("what to call that?").prompt() {
+                config.commands.insert(name, ans.to_string());
+                config.write().unwrap();
+                println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
+            }
         }
         Some(("view", _)) => {
-            println!("Viewing linked apps");
-            // Call your view function here
+            let config = installer::check().unwrap();
+            let content = serde_json::to_string_pretty(&config.commands).unwrap();
+            println!("{}", content)
         }
         Some(("edit", _)) => {
-            println!("Editing config");
-            // Call your edit function here
+            installer::check().unwrap();
+            let path = shellexpand::tilde("~\\.rhiza").to_string();
+            println!("{}", path);
+            std::process::Command::new("explorer")
+                .arg(path)
+                .spawn()
+                .unwrap();
         }
         Some(("run", _)) => {
             worker::run().unwrap();
         }
         Some(("install", _)) => {
-            println!("Installing");
-            // Call your run function here
+            installer::check().unwrap();
+
+            let current_exe = std::env::current_exe().unwrap();
+            let path = shellexpand::tilde("~\\.rhiza\\bin").to_string();
+            let path = Path::new(&path);
+            let destination_path = path.join("rhz.exe");
+            std::fs::copy(&current_exe, &destination_path).unwrap();
+
+            println!(
+                "{}",
+                "Finished installing, you can run rhz now".purple().bold()
+            )
         }
         _ => {
             println!("No subcommand was used. Use --help for more information.");

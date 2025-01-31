@@ -1,7 +1,11 @@
 use colored::Colorize;
 use inquire::{Confirm, InquireError, Text};
 use shellexpand::tilde;
-use std::{fs, io, path::Path};
+use std::{
+    fs,
+    io::{self, Write},
+    path::Path,
+};
 use walkdir::{DirEntry, WalkDir};
 
 use crate::installer;
@@ -9,7 +13,7 @@ use crate::installer;
 pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
     let executables = Vec::new();
     let mut config = installer::check()?;
-    let abs_paths = config.expand();
+    let mut abs_skips = config.expand();
 
     for dir in dirs {
         let expanded_dir = shellexpand::full(dir)
@@ -51,7 +55,7 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
                     // Check for path duplicates
                     let path_exists = config.commands.values().any(|cmd| cmd == path);
                     let skipped_before = config.skipped.contains(&path.to_owned());
-                    let expanded_exists = file_exists(&abs_paths, path)?;
+                    let expanded_exists = file_exists(&abs_skips, path)?;
                     if path_exists || skipped_before || expanded_exists {
                         continue;
                     }
@@ -82,8 +86,16 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
 
                         // Add the new command
                         config.commands.insert(name.clone(), path.to_string());
+                        // make sure it won't reappear
+                        if let Some(abs_path) = installer::read_shortcut(path) {
+                            abs_skips.push(abs_path);
+                        }
                     } else {
+                        // make sure it won't reappear
                         config.skipped.push(path.to_string());
+                        if let Some(abs_path) = installer::read_shortcut(path) {
+                            abs_skips.push(abs_path);
+                        }
                     }
                 }
             }
@@ -91,16 +103,10 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
     }
 
     // extend and write
-    let rhiza_dir = tilde("~/.rhiza").to_string();
-    let config_file = Path::new(&rhiza_dir).join("config.json");
-    fs::write(
-        config_file,
-        serde_json::to_string_pretty(&config)
-            .map_err(|e| InquireError::IO(io::Error::new(io::ErrorKind::Other, e.to_string())))?,
-    )
-    .map_err(InquireError::IO)?;
-
-    Ok(executables)
+    match config.write() {
+        Ok(_) => return Ok(executables),
+        Err(err) => return Err(InquireError::IO(err)),
+    }
 }
 
 fn file_exists(expanded_lnks: &Vec<String>, path: &str) -> Result<bool, io::Error> {
@@ -120,10 +126,12 @@ fn file_exists(expanded_lnks: &Vec<String>, path: &str) -> Result<bool, io::Erro
 pub fn run() -> io::Result<()> {
     // Get config
     let config = installer::check()?;
+    let rhiza_src = tilde("~/.rhiza/src").to_string();
     let rhiza_bin = tilde("~/.rhiza/bin").to_string();
 
     // Ensure bin directory exists
     fs::create_dir_all(&rhiza_bin)?;
+    fs::create_dir_all(&rhiza_src)?;
 
     for (key, path) in config.commands.iter() {
         let source_path = Path::new(path);
@@ -142,7 +150,7 @@ pub fn run() -> io::Result<()> {
                 // For .url and .lnk files, we copy them
                 let ext = source_path.extension().unwrap().to_str().unwrap();
                 let target_name = format!("{}.{}", key, ext);
-                let target_path = Path::new(&rhiza_bin).join(&target_name);
+                let target_path = Path::new(&rhiza_src).join(&target_name);
 
                 if !target_path.exists() {
                     fs::copy(source_path, &target_path)?;
@@ -157,7 +165,7 @@ pub fn run() -> io::Result<()> {
             Some("exe") => {
                 // For .exe files, we create a shortcut
                 let target_name = format!("{}.lnk", key);
-                let target_path = Path::new(&rhiza_bin).join(&target_name);
+                let target_path = Path::new(&rhiza_src).join(&target_name);
 
                 if !target_path.exists() {
                     create_shortcut(source_path, &target_path)?;
@@ -174,6 +182,33 @@ pub fn run() -> io::Result<()> {
                     "{}",
                     format!("Unsupported file type {}, skipping ...", path).yellow()
                 );
+            }
+        }
+    }
+
+    generate_batch_files(&rhiza_src, &rhiza_bin)?;
+    println!("{}", "Done writing bat files".purple());
+
+    Ok(())
+}
+
+fn generate_batch_files(src_dir: &str, dst_dir: &str) -> io::Result<()> {
+    for entry in fs::read_dir(src_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() {
+            if let Some(filename) = path.file_stem() {
+                let bat_filename = format!("{}.bat", filename.to_string_lossy());
+                let bat_path = Path::new(dst_dir).join(bat_filename);
+
+                // Create .bat file content
+                let lnk_path = path.to_string_lossy();
+                let bat_content = format!("@echo off\nstart \"\" \"{}\"\n", lnk_path);
+
+                // Write .bat file
+                let mut bat_file = fs::File::create(bat_path)?;
+                bat_file.write_all(bat_content.as_bytes())?;
             }
         }
     }
