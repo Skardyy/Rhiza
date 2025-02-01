@@ -22,7 +22,7 @@ pub struct FileMatch {
 impl FileMatch {
     pub fn formatted_last_modified(&self) -> ColoredString {
         let datetime: DateTime<Local> = self.last_modified.clone().into();
-        datetime.format("(%d/%m/%Y %I:%M %p)").to_string().yellow()
+        datetime.format("‌(%d/%m/%Y %I:%M %p)").to_string().yellow()
     }
 }
 
