@@ -65,7 +65,7 @@ fn main() {
 
             let options = matches
                 .iter()
-                .map(|f| format!("{} ({})", f.path.display(), f.formatted_last_modified()))
+                .map(|f| format!("{} {}", f.path.display(), f.formatted_last_modified()))
                 .collect();
 
             let ans = Select::new("choose the best match", options)
