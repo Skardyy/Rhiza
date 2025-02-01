@@ -228,7 +228,7 @@ fn generate_batch_files(src_dir: &str, dst_dir: &str) -> io::Result<()> {
 
                 // Create .bat file content
                 let lnk_path = path.to_string_lossy();
-                let bat_content = format!("@echo off\nstart \"\" \"{}\"\n", lnk_path);
+                let bat_content = format!("@echo off\nstart /B \"\" \"{}\" %*", lnk_path);
 
                 // Write .bat file
                 let mut bat_file = fs::File::create(bat_path)?;
