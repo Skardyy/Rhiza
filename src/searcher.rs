@@ -5,7 +5,7 @@ use std::sync::{
 };
 
 use chrono::{DateTime, Local};
-use colored::{ColoredString, Colorize};
+use colored::Colorize;
 use ignore::WalkBuilder;
 use indicatif::{ProgressBar, ProgressStyle};
 use serde::{Deserialize, Serialize};
@@ -20,9 +20,10 @@ pub struct FileMatch {
 }
 
 impl FileMatch {
-    pub fn formatted_last_modified(&self) -> ColoredString {
+    pub fn formatted_last_modified(&self) -> String {
         let datetime: DateTime<Local> = self.last_modified.clone().into();
-        datetime.format("‌(%d/%m/%Y %I:%M %p)").to_string().yellow()
+        let datetime = datetime.format("(%d/%m/%Y %I:%M %p)").to_string().yellow();
+        format!("‌{}", datetime)
     }
 }
 

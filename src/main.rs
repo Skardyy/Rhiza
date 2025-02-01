@@ -71,7 +71,7 @@ fn main() {
             let ans = Select::new("choose the best match", options)
                 .prompt()
                 .unwrap();
-            let ans = ans.split_once("‌").map(|(name, _)| name).unwrap();
+            let ans = ans.split_once(" ‌").map(|(name, _)| name).unwrap();
             if let Ok(name) = Text::new("what to call that?").prompt() {
                 config.commands.insert(name, ans.to_string());
                 config.write().unwrap();

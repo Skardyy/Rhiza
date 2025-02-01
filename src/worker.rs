@@ -126,8 +126,8 @@ fn file_exists(expanded_lnks: &Vec<String>, path: &str) -> Result<bool, io::Erro
 pub fn run() -> io::Result<()> {
     // Get config
     let config = installer::check()?;
-    let rhiza_src = tilde("~/.rhiza/src").to_string();
-    let rhiza_bin = tilde("~/.rhiza/bin").to_string();
+    let rhiza_src = tilde("~\\.rhiza\\src").to_string();
+    let rhiza_bin = tilde("~\\.rhiza\\bin").to_string();
 
     // Ensure bin directory exists
     fs::create_dir_all(&rhiza_bin)?;
@@ -290,7 +290,12 @@ fn is_user_friendly(entry: &DirEntry) -> bool {
     true
 }
 fn create_shortcut(source: &Path, target: &Path) -> io::Result<()> {
-    let sl = mslnk::ShellLink::new(target).unwrap();
-    sl.create_lnk(source).unwrap();
+    println!(
+        "Src: {}, target: {}",
+        source.to_string_lossy(),
+        target.to_string_lossy()
+    );
+    let sl = mslnk::ShellLink::new(source).unwrap();
+    sl.create_lnk(target).unwrap();
     Ok(())
 }
