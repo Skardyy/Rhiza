@@ -97,7 +97,6 @@ fn main() {
         Some(("edit", _)) => {
             installer::check().unwrap();
             let path = shellexpand::tilde("~\\.rhiza").to_string();
-            println!("{}", path);
             std::process::Command::new("explorer")
                 .arg(path)
                 .spawn()

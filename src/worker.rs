@@ -157,7 +157,7 @@ pub fn run() -> io::Result<()> {
                         "{} {} -> {}",
                         "Created".green(),
                         key.bold(),
-                        target_path.display()
+                        source_path.display()
                     );
                 }
             }
@@ -172,7 +172,7 @@ pub fn run() -> io::Result<()> {
                         "{} {} -> {}",
                         "Created shortcut".green(),
                         key,
-                        target_path.display()
+                        source_path.display()
                     );
                 }
             }
@@ -313,11 +313,6 @@ fn is_user_friendly(entry: &DirEntry) -> bool {
     true
 }
 fn create_shortcut(source: &Path, target: &Path) -> io::Result<()> {
-    println!(
-        "Src: {}, target: {}",
-        source.to_string_lossy(),
-        target.to_string_lossy()
-    );
     let sl = mslnk::ShellLink::new(source).unwrap();
     sl.create_lnk(target).unwrap();
     Ok(())
