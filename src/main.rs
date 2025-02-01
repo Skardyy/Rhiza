@@ -25,13 +25,23 @@ fn main() {
                 .about("Find potential apps to link")
                 .arg(
                     Arg::new("path")
-                        .short('p')
-                        .long("path")
+                        .index(1)
                         .value_name("PATH")
+                        .required(false)
                         .help("Specify a directory to crawl"),
                 ),
         )
-        .subcommand(Command::new("add").about("Search for a single app to add"))
+        .subcommand(
+            Command::new("add")
+                .about("Search for a single app to add")
+                .arg(
+                    Arg::new("name")
+                        .index(1)
+                        .value_name("NAME")
+                        .help("name of the app to search for")
+                        .required(false),
+                ),
+        )
         .subcommand(Command::new("view").about("View all linked apps and their config"))
         .subcommand(Command::new("edit").about("Edit the config"))
         .subcommand(Command::new("run").about("Create the lnk files"))
@@ -40,9 +50,7 @@ fn main() {
 
     match matches.subcommand() {
         Some(("crawl", sub_matches)) => {
-            let path = sub_matches.get_one::<String>("path");
-
-            let dirs = match path {
+            let dirs = match sub_matches.get_one::<String>("path") {
                 None => vec![
                     "~\\Desktop",
                     "~\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu",
@@ -56,9 +64,12 @@ fn main() {
             let _ = worker::crawl_directory(dirs);
             println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
         }
-        Some(("add", _)) => {
+        Some(("add", subcommand)) => {
             let mut config = installer::check().unwrap();
-            let name = Text::new("what to search for?").prompt().unwrap();
+            let name = match subcommand.get_one::<String>("name") {
+                Some(n) => n,
+                None => &Text::new("what to search for?").prompt().unwrap(),
+            };
 
             let optimizer = searcher::FileSearchOptimizer::new();
             let matches = optimizer.find_top_matches(&name, 5);

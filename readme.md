@@ -38,15 +38,15 @@ you will be prompted for new apps you didn't link to before (apps you said no be
   
 you can also
 ```sh
-rhz crawl -p "/path/to/dir"
+rhz crawl "/PATH/TO/DIR"
 ```
 
 ### Add
-you can search for a single app across the entire file-system
+you can search for a single app across the entire file-system (ignores hidden folders and Windows/Microsoft ones)
 ```sh
-rhz add
+rhz add NAME
 ```
-https://github.com/user-attachments/assets/8fad0bf8-0390-4471-a5c4-39f9d0c22117
+https://github.com/user-attachments/assets/8fad0bf8-0390-4471-a5c4-39f9d0c22117  
 
 ### View
 you can view all linked apps and their config
