@@ -1,3 +1,4 @@
+use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -27,30 +28,15 @@ impl FileMatch {
 
 pub struct FileSearchOptimizer {
     extensions: Vec<String>,
-    excluded_dirs: Vec<PathBuf>,
 }
 
 impl FileSearchOptimizer {
     pub fn new() -> Self {
         Self {
             extensions: vec!["lnk".to_string(), "url".to_string(), "exe".to_string()],
-            excluded_dirs: Self::get_system_dirs(),
         }
     }
 
-    /// Get standard Windows system directories to exclude
-    fn get_system_dirs() -> Vec<PathBuf> {
-        vec![
-            // Standard Windows system directories
-            PathBuf::from("C:\\Windows"),
-            PathBuf::from("C:\\ProgramData"),
-            // Common system directories to skip
-            PathBuf::from("C:\\Windows\\System32"),
-            PathBuf::from("C:\\Windows\\WinSxS"),
-        ]
-    }
-
-    /// Fuzzy matching with advanced scoring
     fn calculate_similarity(search_term: &str, filename: &str) -> f64 {
         // Normalize by lowercase
         let normalized_search = search_term.to_lowercase();
@@ -92,12 +78,25 @@ impl FileSearchOptimizer {
         progress_bar.enable_steady_tick(std::time::Duration::from_millis(100));
         progress_bar.set_message(format!("Searching for '{}'...", search_term));
 
-        // Parallel directory walk
+        let exs = vec![
+            "C:\\Windows",
+            "C:\\Windows.old",
+            "C:\\ProgramData",
+            "C:\\Program Files\\Microsoft",
+            "C:\\Program Files\\Windows",
+            "C:\\Program Files (x86)\\Microsoft",
+            "C:\\Program Files (x86)\\Windows",
+        ];
+        pub fn is_excluded(entry: &ignore::DirEntry, excluded: &Vec<&str>) -> bool {
+            let path = entry.path();
+            !excluded.iter().any(|ex| path.starts_with(ex))
+        }
         let walker = WalkBuilder::new(&dir)
-            .max_depth(Some(10)) // Limit depth to prevent excessive searching
+            .max_depth(Some(10))
             .same_file_system(true) // Avoid network/removable drives
             .git_ignore(false)
-            .hidden(false)
+            .hidden(true)
+            .filter_entry(move |entry| is_excluded(entry, &exs))
             .build_parallel();
 
         walker.run(|| {
@@ -124,12 +123,12 @@ impl FileSearchOptimizer {
                     // Check file extensions and exclusions
                     if let Some(ext) = path.extension() {
                         let ext_str = ext.to_str().unwrap_or_default().to_lowercase();
-                        let is_excluded_dir = self
-                            .excluded_dirs
-                            .iter()
-                            .any(|excluded| path.starts_with(excluded));
+                        //let is_excluded_dir = self
+                        //    .excluded_dirs
+                        //    .iter()
+                        //    .any(|excluded| path.starts_with(excluded));
 
-                        if self.extensions.contains(&ext_str) && !is_excluded_dir {
+                        if self.extensions.contains(&ext_str) {
                             if let Some(filename) = path.file_name() {
                                 let filename_str = filename.to_str().unwrap_or_default();
                                 let similarity =
