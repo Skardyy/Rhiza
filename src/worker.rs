@@ -130,7 +130,6 @@ pub fn run() -> io::Result<()> {
     let rhiza_bin = tilde("~\\.rhiza\\bin").to_string();
 
     // Ensure bin directory exists
-    fs::create_dir_all(&rhiza_bin)?;
     fs::create_dir_all(&rhiza_src)?;
 
     for (key, path) in config.commands.iter() {
@@ -193,7 +192,31 @@ pub fn run() -> io::Result<()> {
     Ok(())
 }
 
+fn clean_dir_except_exe(target: &Path) -> io::Result<()> {
+    let current_exe = std::env::current_exe()?;
+    if !target.exists() {
+        fs::create_dir_all(target)?;
+        return Ok(());
+    }
+
+    for entry in fs::read_dir(target)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path == current_exe {
+            continue;
+        }
+
+        fs::remove_file(&path)?;
+    }
+
+    Ok(())
+}
+
 fn generate_batch_files(src_dir: &str, dst_dir: &str) -> io::Result<()> {
+    let target = Path::new(dst_dir);
+    clean_dir_except_exe(target)?;
+
     for entry in fs::read_dir(src_dir)? {
         let entry = entry?;
         let path = entry.path();

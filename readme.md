@@ -60,10 +60,9 @@ or maybe you want to edit the config
 ```
 rhz edit
 ```
-it will open the ~/.rhiza/ folder where you can:
-* delete the bat files from the bin dir (what is called to open the shortcut)
-* delete the url/lnk file from the src dir (what the bat file is pointing to)
-* edit the config to not automatically re add the deleted items
+it will open the ~/.rhiza/ folder where you can:  
+* edit the config to not automatically re add the deleted items  
+* delete the url/lnk file from the src dir (after doing `rhz run` the shell and menu links will be removed as well)
 
 ### Run
 finally you can create the lnk files using

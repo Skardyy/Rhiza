@@ -53,9 +53,11 @@ pub fn copy_src() -> std::io::Result<()> {
     );
     let target = Path::new(&target);
 
-    if !target.exists() {
-        fs::create_dir_all(target)?;
+    if target.exists() {
+        fs::remove_dir_all(target)?;
     }
+    fs::create_dir_all(target)?;
+
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         let src_path = entry.path();
