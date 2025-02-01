@@ -1,4 +1,3 @@
-use std::fs::DirEntry;
 use std::path::{Path, PathBuf};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
