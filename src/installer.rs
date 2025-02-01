@@ -4,9 +4,10 @@ use serde_derive::{Deserialize, Serialize};
 use shellexpand::tilde;
 use std::fs;
 use std::io;
+use std::io::Write;
 use std::path::Path;
 use winreg::enums::*;
-use winreg::RegKey;
+use winreg::RegKey; // Add this import
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
@@ -208,4 +209,24 @@ pub fn read_shortcut(lnk_path: &str) -> Option<String> {
         }
     }
     None
+}
+pub fn setup_panic_logging() {
+    let log_dir = std::path::PathBuf::from(shellexpand::tilde("~/.rhiza").into_owned());
+    let log_path = log_dir.join("panic.log");
+
+    if !log_dir.exists() {
+        fs::create_dir_all(&log_dir).expect("Failed to create .rhiza directory");
+    }
+
+    std::panic::set_hook(Box::new(move |panic_info| {
+        if let Ok(mut file) = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_path)
+        {
+            let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+            let _ = writeln!(file, "\n[{}] Panic occurred:", timestamp);
+            let _ = writeln!(file, "{}\n", panic_info);
+        }
+    }));
 }

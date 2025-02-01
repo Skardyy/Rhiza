@@ -10,7 +10,7 @@ use clap::{
 use colored::*;
 use inquire::{Select, Text};
 fn main() {
-    std::panic::set_hook(Box::new(|_| {}));
+    installer::setup_panic_logging();
     let matches = Command::new("Rhiza")
         .version("1.0")
         .about("A blazingly fast app linker for Windows 🚀")
