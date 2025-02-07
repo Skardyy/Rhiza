@@ -192,8 +192,7 @@ pub fn run() -> io::Result<()> {
     Ok(())
 }
 
-fn clean_dir_except_exe(target: &Path) -> io::Result<()> {
-    let current_exe = std::env::current_exe()?;
+fn clean_dir(target: &Path) -> io::Result<()> {
     if !target.exists() {
         fs::create_dir_all(target)?;
         return Ok(());
@@ -203,10 +202,6 @@ fn clean_dir_except_exe(target: &Path) -> io::Result<()> {
         let entry = entry?;
         let path = entry.path();
 
-        if path == current_exe {
-            continue;
-        }
-
         fs::remove_file(&path)?;
     }
 
@@ -215,7 +210,7 @@ fn clean_dir_except_exe(target: &Path) -> io::Result<()> {
 
 fn generate_batch_files(src_dir: &str, dst_dir: &str) -> io::Result<()> {
     let target = Path::new(dst_dir);
-    clean_dir_except_exe(target)?;
+    clean_dir(target)?;
 
     for entry in fs::read_dir(src_dir)? {
         let entry = entry?;

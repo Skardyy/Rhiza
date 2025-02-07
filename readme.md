@@ -17,7 +17,7 @@ only made for windows (linux has way better options already)
 ```sh
 git clone https://github.com/Skardyy/Rhiza
 cd rhiza
-cargo run --release -- install
+cargo install --path .
 ```
 
 # Usage💡
@@ -75,4 +75,5 @@ it will create the bin and src files and allow you to use your shortcuts in the 
   
 > [!Tip]
 > did you know?  
-> Rhiza is the spirit of roots and growth, embodying the hidden strength and connection of the earth. 🌱🌿
+> Rhiza is the spirit of roots and growth 🌱🌿  
+> rooting those apps for you  

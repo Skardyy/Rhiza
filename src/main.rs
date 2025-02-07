@@ -1,7 +1,6 @@
 mod installer;
 mod searcher;
 mod worker;
-use std::path::Path;
 
 use clap::{
     builder::{styling::AnsiColor, Styles},
@@ -45,7 +44,6 @@ fn main() {
         .subcommand(Command::new("view").about("View all linked apps and their config"))
         .subcommand(Command::new("edit").about("Edit the config"))
         .subcommand(Command::new("run").about("Create the lnk files"))
-        .subcommand(Command::new("install").about("Creates the config and adds to the path"))
         .get_matches();
 
     match matches.subcommand() {
@@ -104,20 +102,6 @@ fn main() {
         }
         Some(("run", _)) => {
             worker::run().unwrap();
-        }
-        Some(("install", _)) => {
-            installer::check().unwrap();
-
-            let current_exe = std::env::current_exe().unwrap();
-            let path = shellexpand::tilde("~\\.rhiza\\bin").to_string();
-            let path = Path::new(&path);
-            let destination_path = path.join("rhz.exe");
-            std::fs::copy(&current_exe, &destination_path).unwrap();
-
-            println!(
-                "{}",
-                "Finished installing, you can run rhz now".purple().bold()
-            )
         }
         _ => {
             println!("No subcommand was used. Use --help for more information.");
