@@ -75,5 +75,5 @@ it will create the bin and src files and allow you to use your shortcuts in the 
   
 > [!Tip]
 > did you know?  
-> Rhiza is the spirit of roots and growth 🌱🌿  
+> Rhiza means "Root" in greek 🌱🌿  
 > rooting those apps for you  
