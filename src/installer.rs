@@ -115,7 +115,7 @@ pub fn check() -> io::Result<Config> {
     }
 }
 
-fn add_to_path_permanently(new_path: &str) -> io::Result<()> {
+pub fn add_to_path_permanently(new_path: &str) -> io::Result<()> {
     // Open the environment variables key in the registry for the current user
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     let environment_key = hkcu.open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)?;

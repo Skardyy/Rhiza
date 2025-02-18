@@ -2,6 +2,8 @@ mod installer;
 mod searcher;
 mod worker;
 
+use std::path::Path;
+
 use clap::{
     builder::{styling::AnsiColor, Styles},
     Arg, ColorChoice, Command,
@@ -33,6 +35,17 @@ fn main() {
         .subcommand(
             Command::new("add")
                 .about("Search for a single app to add")
+                .arg(
+                    Arg::new("name")
+                        .index(1)
+                        .value_name("NAME")
+                        .help("name of the app to search for")
+                        .required(false),
+                ),
+        )
+        .subcommand(
+            Command::new("path")
+                .about("Search for a single app to add to path")
                 .arg(
                     Arg::new("name")
                         .index(1)
@@ -85,6 +98,30 @@ fn main() {
                 config.commands.insert(name, ans.to_string());
                 config.write().unwrap();
                 println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
+            }
+        }
+        Some(("path", subcommand)) => {
+            let name = match subcommand.get_one::<String>("name") {
+                Some(n) => n,
+                None => &Text::new("what to search for?").prompt().unwrap(),
+            };
+
+            let optimizer = searcher::FileSearchOptimizer::new();
+            let matches = optimizer.find_top_matches(&name, 5);
+
+            let options = matches
+                .iter()
+                .map(|f| format!("{} {}", f.path.display(), f.formatted_last_modified()))
+                .collect();
+
+            let ans = Select::new("choose the best match", options)
+                .prompt()
+                .unwrap();
+            let ans = ans.split_once(" ‌").map(|(name, _)| name).unwrap();
+            let base_dir = Path::new(ans).parent();
+            if let Some(dir) = base_dir {
+                let dir = &dir.to_string_lossy().to_string();
+                installer::add_to_path_permanently(dir).unwrap();
             }
         }
         Some(("view", _)) => {

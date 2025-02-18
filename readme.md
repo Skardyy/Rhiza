@@ -1,26 +1,38 @@
-# Rhiza: a blazingly fast app linker 🚀
-only made for windows (linux has way better options already)
+<h1 align="center">Rhiza</h1>
+<p align="center">A blazingly fast app linker 🚀</p>
+<div align="center">
+
+![Static Badge](https://img.shields.io/badge/rhiza-%231e2029?logo=rootssage&logoColor=%23afe74c&label=rooting%20apps&labelColor=%2315161b&color=%23afe74c) ˙ [![Static Badge](https://img.shields.io/badge/rust-%231e2029?logo=rust&logoColor=f74b00&label=made%20with&labelColor=%2315161b&color=%23f74b00)](https://www.rust-lang.org/) ˙ ![GitHub License](https://img.shields.io/github/license/Skardyy/Rhiza?style=flat&labelColor=%2315161b)
+</div>
+
+---
+
+> [!Note]
+> Rhiza is for windows only
+> linux has better options already
+
 ### Table of Content  
 * [Requirements](#Requirements)
 * [Installation](#Installation)
 * [Usage](#Usage)
   * [Crawl](#Crawl)
   * [Add](#Add)
+  * [Path](#Path)
   * [View](#View)
   * [Edit](#Edit)
   * [Run](#Run)
 
-# Requirements📝
+## Requirements📝
 * [rust](https://www.rust-lang.org/)
 
-# Installation🔧
+## Installation🔧
 ```sh
 git clone https://github.com/Skardyy/Rhiza
 cd rhiza
 cargo install --path .
 ```
 
-# Usage💡
+## Usage💡
 ### Crawl
 ```sh
 rhz crawl
@@ -55,6 +67,12 @@ rhz view
 ```
 it will print it in a formatted json
 
+### Path  
+same as add ~ just for adding into path  
+```sh
+rhz path NAME
+```  
+
 ### Edit
 or maybe you want to edit the config
 ```
@@ -75,5 +93,5 @@ it will create the bin and src files and allow you to use your shortcuts in the 
   
 > [!Tip]
 > did you know?  
-> Rhiza is the spirit of roots and growth 🌱🌿  
+> Rhiza means "Root" in greek 🌱🌿  
 > rooting those apps for you  
