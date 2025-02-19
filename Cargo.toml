@@ -1,7 +1,15 @@
 [package]
-name = "rhz"
+name = "rhiza"
 version = "0.1.0"
 edition = "2021"
+description = "A windows shortcut creator / app launcher"
+license = "MIT"
+readme = "README.md"
+keywords = ["cli", "rust", "tool", "rhiza", "rhz", "shortcut", "windows", "shortcut-creator", "app-launcher"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/Skardyy/Rhiza"
+homepage = "https://github.com/Skardyy/Rhiza"
+documentation = "https://docs.rs/rhiza/latest/rhiza/"
 
 [dependencies]
 clap = { version = "4.5.26", features = ["derive"] }
@@ -22,3 +30,7 @@ dirs = "5.0"
 similar-string = "1.3"
 chrono = "0.4.39"
 indicatif = "0.17.11"
+
+[[bin]]
+name = "rhz"
+path = "src/main.rs"
