@@ -1,6 +1,6 @@
 [package]
 name = "rhiza"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "A windows shortcut creator / app launcher"
 license = "MIT"
@@ -9,7 +9,7 @@ keywords = ["rhiza", "rhz", "shortcut", "shortcut-creator", "app-launcher"]
 categories = ["command-line-utilities"]
 repository = "https://github.com/Skardyy/Rhiza"
 homepage = "https://github.com/Skardyy/Rhiza"
-documentation = "https://docs.rs/rhiza/latest/rhiza/"
+documentation = "https://github.com/Skardyy/Rhiza"
 
 [dependencies]
 clap = { version = "4.5.26", features = ["derive"] }

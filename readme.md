@@ -1,14 +1,14 @@
 <h1 align="center">Rhiza</h1>
-<p align="center">A blazingly fast app linker 🚀</p>
+<p align="center">🚀 A blazingly fast app linker 🚀</p>
 <div align="center">
 
-![Static Badge](https://img.shields.io/badge/rhiza-%231e2029?logo=rootssage&logoColor=%233CA628&label=rooting%20apps&labelColor=%2315161b&color=%233CA628) ˙ [![Static Badge](https://img.shields.io/badge/rust-%231e2029?logo=rust&logoColor=f74b00&label=made%20with&labelColor=%2315161b&color=%23f74b00)](https://www.rust-lang.org/) ˙ ![GitHub License](https://img.shields.io/github/license/Skardyy/Rhiza?style=flat&labelColor=%2315161b&color=%234676C6)
+[![Static Badge](https://img.shields.io/badge/crates.io-f74b00?style=flat&logo=rust&logoColor=f74b00&label=find%20at&labelColor=15161b)](https://crates.io/crates/rhiza)
 </div>
 
 ---
 
 > [!Note]
-> Rhiza is for windows only
+> Rhiza is for windows only  
 > linux has better options already
 
 ### Table of Content  
@@ -22,14 +22,9 @@
   * [Edit](#Edit)
   * [Run](#Run)
 
-## Requirements📝
-* [rust](https://www.rust-lang.org/)
-
 ## Installation🔧
 ```sh
-git clone https://github.com/Skardyy/Rhiza
-cd rhiza
-cargo install --path .
+cargo install rhiza
 ```
 
 ## Usage💡
