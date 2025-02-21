@@ -12,7 +12,6 @@
 > linux has better options already
 
 ### Table of Content  
-* [Requirements](#Requirements)
 * [Installation](#Installation)
 * [Usage](#Usage)
   * [Crawl](#Crawl)
@@ -39,9 +38,11 @@ defaults:
 * ~\Desktop
 * ~\AppData\Roaming\Microsoft\Windows\Start Menu
 * C:\ProgramData\Microsoft\Windows\Start Menu
-there are more filtering and logic to prompt the user only for relevant apps to link
+
+> * **Crawl** is mostly to find gui apps and games
+> * there are more filtering and logic to prompt you only for relevant apps to link
+> * you will be prompted for new apps you didn't link to before (apps you said no before won't be prompted again)
   
-you will be prompted for new apps you didn't link to before (apps you said no before won't be prompted again)
   
 you can also
 ```sh
@@ -55,6 +56,16 @@ rhz add NAME
 ```
 https://github.com/user-attachments/assets/8fad0bf8-0390-4471-a5c4-39f9d0c22117  
 
+
+### Path  
+same as add ~ just for adding into path  
+```sh
+rhz path NAME
+```  
+
+https://github.com/user-attachments/assets/63edb5d9-ffa0-4b21-84eb-105db17346db
+
+
 ### View
 you can view all linked apps and their config
 ```
@@ -62,11 +73,6 @@ rhz view
 ```
 it will print it in a formatted json
 
-### Path  
-same as add ~ just for adding into path  
-```sh
-rhz path NAME
-```  
 
 ### Edit
 or maybe you want to edit the config
