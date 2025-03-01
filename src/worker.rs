@@ -79,7 +79,7 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
         let entry = Path::new(&path);
         let place_holder = get_name(&entry)?;
 
-        let prompt = format!("for \x1b[35m{}\x1b[0m\nhow to call it?", path);
+        let prompt = format!("for {}\nhow to call it?", path.purple());
         let name = Text::new(&prompt).with_default(&place_holder).prompt()?;
 
         if config.commands.contains_key(&name) {
@@ -101,7 +101,7 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
     }
     // removes not selected
     let remove = Confirm::new(
-        "\x1b[35m\x1b[1mWould you like to hide the unselected apps from future selections?\x1b[0m",
+        &"Would you like to hide the unselected apps from future selections?".to_string().purple().bold(),
     )
     .with_default(true)
     .prompt()?;

@@ -31,7 +31,7 @@ cargo install rhiza
 ```sh
 rhz crawl
 ```
-https://github.com/user-attachments/assets/61b4cee4-70f5-4f0d-9e24-a7b06efacd4a
+https://github.com/user-attachments/assets/c0f0d8f3-4d8f-4629-928b-7e811458a90a
 
 to find potential apps to link (walks recursively)
 defaults:
@@ -54,17 +54,14 @@ you can search for a single app across the entire file-system (ignores hidden fo
 ```sh
 rhz add NAME
 ```
-https://github.com/user-attachments/assets/8fad0bf8-0390-4471-a5c4-39f9d0c22117  
-
+https://github.com/user-attachments/assets/e3010698-b8d9-49d6-b820-4c173e914a4f
 
 ### Path  
 same as add ~ just for adding into path  
 ```sh
 rhz path NAME
 ```  
-
-https://github.com/user-attachments/assets/63edb5d9-ffa0-4b21-84eb-105db17346db
-
+https://github.com/user-attachments/assets/09e8ebe3-89b9-4ee0-b908-40265935518b
 
 ### View
 you can view all linked apps and their config
