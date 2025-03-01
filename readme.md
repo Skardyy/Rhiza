@@ -63,6 +63,11 @@ rhz path NAME
 ```  
 https://github.com/user-attachments/assets/09e8ebe3-89b9-4ee0-b908-40265935518b
 
+> [!Note]  
+> For both the **Path** and **Add** functions  
+> if the user have fzf installed in the machine and he didn't specify a search term  
+> fzf will open to search for the recommended files  
+
 ### View
 you can view all linked apps and their config
 ```

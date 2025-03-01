@@ -1,8 +1,10 @@
 use ignore::WalkBuilder;
 use indicatif::{ProgressBar, ProgressStyle};
-use inquire::Select;
+use inquire::{Select, Text};
 use similar_string::compare_similarity;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
@@ -33,6 +35,7 @@ fn calculate_similarity(search_term: &str, filename: &str) -> f64 {
 
 fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
     let (sender, receiver) = channel::<FileInfo>();
+    let empty_search = search_term == "";
 
     let dir = Path::new("C:\\");
     let excluded_dirs = vec![
@@ -47,13 +50,15 @@ fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
 
     // Setup progress bar
     let progress_bar = ProgressBar::new_spinner();
-    let progress_style = ProgressStyle::default_spinner()
-        .template("{spinner:.green} [{elapsed_precise}] {msg}")
-        .unwrap()
-        .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]);
-    progress_bar.set_style(progress_style);
-    progress_bar.enable_steady_tick(std::time::Duration::from_millis(100));
-    progress_bar.set_message("Collecting files...");
+    if !empty_search {
+        let progress_style = ProgressStyle::default_spinner()
+            .template("{spinner:.green} [{elapsed_precise}] {msg}")
+            .unwrap()
+            .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]);
+        progress_bar.set_style(progress_style);
+        progress_bar.enable_steady_tick(std::time::Duration::from_millis(100));
+        progress_bar.set_message("Collecting files...");
+    }
     let file_count = Arc::new(AtomicUsize::new(0));
 
     fn is_excluded(entry: &ignore::DirEntry, excluded: &[&str]) -> bool {
@@ -88,9 +93,12 @@ fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
             let progress_bar = progress_bar_clone.clone();
 
             Box::new(move |result| {
-                let files_so_far = file_count.load(Ordering::Relaxed);
-                if files_so_far % 1000 == 0 {
-                    progress_bar.set_message(format!("Collecting files - Found {}", files_so_far));
+                if !empty_search {
+                    let files_so_far = file_count.load(Ordering::Relaxed);
+                    if files_so_far % 1000 == 0 {
+                        progress_bar
+                            .set_message(format!("Collecting files - Found {}", files_so_far));
+                    }
                 }
 
                 if let Ok(entry) = result {
@@ -102,8 +110,12 @@ fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
                             let ext = ext.to_string_lossy().to_lowercase();
                             if exts.contains(&ext) {
                                 let path_str = path.to_string_lossy().to_string();
-                                let similarity = calculate_similarity(&search_term, &path_str);
-                                if similarity > 0.3 {
+                                let similarity = if !empty_search {
+                                    calculate_similarity(&search_term, &path_str)
+                                } else {
+                                    0.0
+                                };
+                                if empty_search || similarity > 0.3 {
                                     // Send matching file info; ignore send errors if the receiver is dropped
                                     let _ = sender.send(FileInfo {
                                         path: path_str,
@@ -117,34 +129,75 @@ fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
                 ignore::WalkState::Continue
             })
         });
-        progress_bar_clone.finish_with_message(format!(
-            "Finished collecting {} files",
-            file_count_clone.load(Ordering::Relaxed)
-        ));
+        if !empty_search {
+            progress_bar_clone.finish_with_message(format!(
+                "Finished collecting {} files",
+                file_count_clone.load(Ordering::Relaxed)
+            ));
+        }
     });
 
     receiver
 }
 
 pub fn prompt_fzf(
-    search_term: &str,
+    search_term: Option<&String>,
     max_results: usize,
     prompt: &str,
     exts: Vec<String>,
-) -> String {
-    // Collect the results from the channel iterator.
-    let mut opts: Vec<FileInfo> = search_fuzzy(search_term, exts).into_iter().collect();
+) -> Option<String> {
+    if !search_term.is_some() {
+        if let Some(mut child) = spawn_fzf() {
+            if let Some(stdin) = child.stdin.as_mut() {
+                for file_info in search_fuzzy("", exts.clone()) {
+                    // The Write trait is in scope so you can use writeln!
+                    if writeln!(stdin, "{}", file_info.path).is_err() {
+                        eprintln!("Failed to write to fzf stdin");
+                        break;
+                    }
+                }
+            }
+
+            // Wait for fzf to complete and capture its output.
+            let output = child
+                .wait_with_output()
+                .expect("Failed to wait on fzf child");
+            if output.status.success() {
+                return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
+            } else {
+                return None;
+            }
+        }
+    }
+
+    // Fallback
+    let search_term = match search_term {
+        Some(v) => v,
+        None => &Text::new("what to search for?").prompt().unwrap(),
+    };
+    let mut opts: Vec<FileInfo> = search_fuzzy(&search_term, exts).into_iter().collect();
     opts.sort_by(|a, b| {
         b.score
             .partial_cmp(&a.score)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
     opts.truncate(max_results);
+    let opts: Vec<String> = opts.into_iter().map(|f| f.path).collect();
 
-    let opts = opts.into_iter().map(|f| f.path).collect();
-    Select::new(prompt, opts)
-        .without_filtering()
-        .with_vim_mode(true)
-        .prompt()
-        .unwrap()
+    Some(
+        Select::new(prompt, opts)
+            .without_filtering()
+            .with_vim_mode(true)
+            .prompt()
+            .unwrap(),
+    )
+}
+
+fn spawn_fzf() -> Option<Child> {
+    Command::new("fzf")
+        .arg("--tiebreak=end,length")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .ok()
 }

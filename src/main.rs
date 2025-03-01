@@ -78,10 +78,7 @@ fn main() {
         }
         Some(("add", subcommand)) => {
             let mut config = installer::check().unwrap();
-            let name = match subcommand.get_one::<String>("name") {
-                Some(n) => n,
-                None => &Text::new("what to search for?").prompt().unwrap(),
-            };
+            let name = subcommand.get_one::<String>("name");
 
             let res = searcher::prompt_fzf(
                 name,
@@ -89,17 +86,17 @@ fn main() {
                 "Select app to add:\n",
                 vec!["exe".to_string(), "lnk".to_string(), "url".to_string()],
             );
-            if let Ok(name) = Text::new("what to call that?").prompt() {
-                config.commands.insert(name, res);
-                config.write().unwrap();
-                println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
+
+            if let Some(path) = res {
+                if let Ok(name) = Text::new("what to call that?").prompt() {
+                    config.commands.insert(name, path);
+                    config.write().unwrap();
+                    println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
+                }
             }
         }
         Some(("path", subcommand)) => {
-            let name = match subcommand.get_one::<String>("name") {
-                Some(n) => n,
-                None => &Text::new("what to search for?").prompt().unwrap(),
-            };
+            let name = subcommand.get_one::<String>("name");
 
             let res = searcher::prompt_fzf(
                 name,
@@ -107,10 +104,13 @@ fn main() {
                 "Select path to add:\n",
                 vec!["ps1".to_string(), "exe".to_string()],
             );
-            let base_dir = Path::new(&res).parent();
-            if let Some(dir) = base_dir {
-                let dir = &dir.to_string_lossy().to_string();
-                installer::add_to_path_permanently(dir).unwrap();
+
+            if let Some(path) = res {
+                let base_dir = Path::new(&path).parent();
+                if let Some(dir) = base_dir {
+                    let dir = &dir.to_string_lossy().to_string();
+                    installer::add_to_path_permanently(dir).unwrap();
+                }
             }
         }
         Some(("view", _)) => {
