@@ -9,7 +9,8 @@ use clap::{
     Arg, ColorChoice, Command,
 };
 use colored::*;
-use inquire::{Select, Text};
+use inquire::Text;
+
 fn main() {
     installer::setup_panic_logging();
     let matches = Command::new("Rhiza")
@@ -82,20 +83,14 @@ fn main() {
                 None => &Text::new("what to search for?").prompt().unwrap(),
             };
 
-            let optimizer = searcher::FileSearchOptimizer::new();
-            let matches = optimizer.find_top_matches(&name, 5);
-
-            let options = matches
-                .iter()
-                .map(|f| format!("{} {}", f.path.display(), f.formatted_last_modified()))
-                .collect();
-
-            let ans = Select::new("choose the best match", options)
-                .prompt()
-                .unwrap();
-            let ans = ans.split_once(" ‌").map(|(name, _)| name).unwrap();
+            let res = searcher::prompt_fzf(
+                name,
+                7,
+                "Select app to add:\n",
+                vec!["exe".to_string(), "lnk".to_string(), "url".to_string()],
+            );
             if let Ok(name) = Text::new("what to call that?").prompt() {
-                config.commands.insert(name, ans.to_string());
+                config.commands.insert(name, res);
                 config.write().unwrap();
                 println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
             }
@@ -106,19 +101,13 @@ fn main() {
                 None => &Text::new("what to search for?").prompt().unwrap(),
             };
 
-            let optimizer = searcher::FileSearchOptimizer::new();
-            let matches = optimizer.find_top_matches(&name, 5);
-
-            let options = matches
-                .iter()
-                .map(|f| format!("{} {}", f.path.display(), f.formatted_last_modified()))
-                .collect();
-
-            let ans = Select::new("choose the best match", options)
-                .prompt()
-                .unwrap();
-            let ans = ans.split_once(" ‌").map(|(name, _)| name).unwrap();
-            let base_dir = Path::new(ans).parent();
+            let res = searcher::prompt_fzf(
+                name,
+                7,
+                "Select path to add:\n",
+                vec!["ps1".to_string(), "exe".to_string()],
+            );
+            let base_dir = Path::new(&res).parent();
             if let Some(dir) = base_dir {
                 let dir = &dir.to_string_lossy().to_string();
                 installer::add_to_path_permanently(dir).unwrap();
