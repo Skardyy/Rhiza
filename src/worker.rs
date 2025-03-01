@@ -1,5 +1,5 @@
 use colored::Colorize;
-use inquire::{Confirm, InquireError, Text};
+use inquire::{Confirm, InquireError, MultiSelect, Text};
 use shellexpand::tilde;
 use std::{
     fs,
@@ -14,32 +14,33 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
     let executables = Vec::new();
     let mut config = installer::check()?;
     let mut abs_skips = config.expand();
+    let mut candidates = Vec::new();
 
+    let target_extensions = ["exe", "lnk", "url"];
+    let skips = vec![
+        "Windows Kits",
+        "Windows Accessories",
+        "PowerShell",
+        "Visual Studio",
+        "Windows System",
+        "Windows Tools",
+        "Accessibility",
+        "System Tools",
+        "Accessories",
+        "Git",
+        "make",
+        "Make",
+        "Microsoft Edge", // Lol
+        "Node.js",
+        "Administrative Tools",
+        "Python",
+        "rhiza",
+    ];
     for dir in dirs {
         let expanded_dir = shellexpand::full(dir)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e.to_string()))?;
         let expanded_dir = expanded_dir.as_ref();
-        let target_extensions = ["exe", "lnk", "url"];
 
-        let skips = vec![
-            "Windows Kits",
-            "Windows Accessories",
-            "PowerShell",
-            "Visual Studio",
-            "Windows System",
-            "Windows Tools",
-            "Accessibility",
-            "System Tools",
-            "Accessories",
-            "Git",
-            "make",
-            "Make",
-            "Microsoft Edge", // Lol
-            "Node.js",
-            "Administrative Tools",
-            "Python",
-            "rhiza",
-        ];
         for entry in WalkDir::new(expanded_dir)
             .into_iter()
             .filter_entry(|e| {
@@ -51,53 +52,67 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
         {
             if is_executable(&entry, &target_extensions) && is_user_friendly(&entry) {
                 if let Some(path) = entry.path().to_str() {
-                    let item = path.to_string();
-
-                    // Check for path duplicates
-                    let path_exists = config.commands.values().any(|cmd| cmd == path);
+                    let path = path.to_string();
+                    let path_exists = config.commands.values().any(|cmd| cmd == &path);
                     let skipped_before = config.skipped.contains(&path.to_owned());
-                    let expanded_exists = file_exists(&abs_skips, path)?;
+                    let expanded_exists = file_exists(&abs_skips, &path)?;
                     if path_exists || skipped_before || expanded_exists {
                         continue;
                     }
+                    candidates.push(path);
+                }
+            }
+        }
+    }
 
-                    let wanted = Confirm::new(&format!("Add {} ?", item))
-                        .with_default(false)
-                        .prompt()?;
-                    if wanted {
-                        // give it a name
-                        let place_holder = get_name(&entry)?;
-                        let name = Text::new("how to call it?")
-                            .with_default(&place_holder)
-                            .prompt()?;
+    if candidates.is_empty() {
+        return Ok(vec![]);
+    }
 
-                        // Check for name conflicts
-                        if config.commands.contains_key(&name) {
-                            let override_existing = Confirm::new(&format!(
-                                "Command name '{}' already exists. Do you want to override it?",
-                                name
-                            ))
-                            .with_default(true)
-                            .prompt()?;
+    let selected = MultiSelect::new("Select apps to add:\n", candidates.clone())
+        .without_filtering()
+        .with_vim_mode(true)
+        .prompt()?;
 
-                            if !override_existing {
-                                continue;
-                            }
-                        }
+    // adds selected
+    for path in selected.clone() {
+        let entry = Path::new(&path);
+        let place_holder = get_name(&entry)?;
 
-                        // Add the new command
-                        config.commands.insert(name.clone(), path.to_string());
-                        // make sure it won't reappear
-                        if let Some(abs_path) = installer::read_shortcut(path) {
-                            abs_skips.push(abs_path);
-                        }
-                    } else {
-                        // make sure it won't reappear
-                        config.skipped.push(path.to_string());
-                        if let Some(abs_path) = installer::read_shortcut(path) {
-                            abs_skips.push(abs_path);
-                        }
-                    }
+        let name = Text::new("how to call it?")
+            .with_default(&place_holder)
+            .prompt()?;
+
+        if config.commands.contains_key(&name) {
+            let override_existing = Confirm::new(&format!(
+                "Command name '{}' already exists. Do you want to override it?",
+                name
+            ))
+            .with_default(true)
+            .prompt()?;
+            if !override_existing {
+                continue;
+            }
+        }
+        config.commands.insert(name.clone(), path.to_string());
+        // make sure it won't reappear
+        if let Some(abs_path) = installer::read_shortcut(&path) {
+            abs_skips.push(abs_path);
+        }
+    }
+    // removes not selected
+    let remove = Confirm::new(
+        "\x1b[35m\x1b[1mWould you like to hide the unselected apps from future selections?\x1b[0m",
+    )
+    .with_default(true)
+    .prompt()?;
+    if remove {
+        for path in candidates {
+            if !selected.contains(&path) {
+                // make sure it won't reappear
+                config.skipped.push(path.to_string());
+                if let Some(abs_path) = installer::read_shortcut(&path) {
+                    abs_skips.push(abs_path);
                 }
             }
         }
@@ -249,9 +264,10 @@ fn is_executable(entry: &DirEntry, target_extensions: &[&str]) -> bool {
     false
 }
 
-fn get_name(file: &DirEntry) -> Result<String, io::Error> {
+fn get_name(file: &Path) -> Result<String, io::Error> {
     let file_name = file
         .file_name()
+        .unwrap()
         .to_str()
         .ok_or(io::Error::from(io::ErrorKind::InvalidData))?
         .to_lowercase();
