@@ -29,7 +29,7 @@ fn calculate_similarity(search_term: &str, filename: &str) -> f64 {
     name_similarity + contains_score
 }
 
-fn search_fuzzy(search_term: &str, max_results: usize, exts: Vec<String>) -> Vec<FileInfo> {
+fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Vec<FileInfo> {
     // Starting directory
     let dir = Path::new("C:\\");
 
@@ -123,14 +123,7 @@ fn search_fuzzy(search_term: &str, max_results: usize, exts: Vec<String>) -> Vec
     let final_file_count = file_count.load(Ordering::Relaxed);
     progress_bar.finish_with_message(format!("Finished collecting {} files", final_file_count));
 
-    let mut final_results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
-    final_results.sort_by(|a, b| {
-        b.score
-            .partial_cmp(&a.score)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-
-    final_results.truncate(max_results);
+    let final_results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
     final_results
 }
 
@@ -140,10 +133,15 @@ pub fn prompt_fzf(
     prompt: &str,
     exts: Vec<String>,
 ) -> String {
-    let opts = search_fuzzy(search_term, max_results, exts)
-        .iter()
-        .map(|f| f.path.clone())
-        .collect();
+    let mut opts = search_fuzzy(search_term, exts);
+    opts.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    opts.truncate(max_results);
+
+    let opts = opts.iter().map(|f| f.path.clone()).collect();
     let select = Select::new(prompt, opts)
         .without_filtering()
         .with_vim_mode(true)

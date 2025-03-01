@@ -2,7 +2,7 @@ use colored::Colorize;
 use inquire::{Confirm, InquireError, MultiSelect, Text};
 use shellexpand::tilde;
 use std::{
-    fmt, fs,
+    fs,
     io::{self, Write},
     path::Path,
 };
@@ -101,7 +101,10 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
     }
     // removes not selected
     let remove = Confirm::new(
-        &"Would you like to hide the unselected apps from future selections?".to_string().purple().bold(),
+        &"Would you like to hide the unselected apps from future selections?"
+            .to_string()
+            .purple()
+            .bold(),
     )
     .with_default(true)
     .prompt()?;
