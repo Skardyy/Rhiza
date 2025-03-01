@@ -1,8 +1,8 @@
 <h1 align="center">Rhiza</h1>
-<p align="center">🚀 A blazingly fast app linker 🚀</p>
+<p align="center">A blazingly fast app linker</p>
 <div align="center">
 
-[![Static Badge](https://img.shields.io/badge/crates.io-f74b00?style=flat&logo=rust&logoColor=f74b00&label=find%20at&labelColor=15161b)](https://crates.io/crates/rhiza)
+[![Static Badge](https://img.shields.io/badge/crates.io-1e2029?style=flat&logo=rust&logoColor=f74b00&label=find%20at&labelColor=15161b)](https://crates.io/crates/rhiza)
 </div>
 
 ---

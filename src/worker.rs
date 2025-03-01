@@ -2,7 +2,7 @@ use colored::Colorize;
 use inquire::{Confirm, InquireError, MultiSelect, Text};
 use shellexpand::tilde;
 use std::{
-    fs,
+    fmt, fs,
     io::{self, Write},
     path::Path,
 };
@@ -79,9 +79,8 @@ pub fn crawl_directory(dirs: Vec<&str>) -> Result<Vec<String>, InquireError> {
         let entry = Path::new(&path);
         let place_holder = get_name(&entry)?;
 
-        let name = Text::new("how to call it?")
-            .with_default(&place_holder)
-            .prompt()?;
+        let prompt = format!("for \x1b[35m{}\x1b[0m\nhow to call it?", path);
+        let name = Text::new(&prompt).with_default(&place_holder).prompt()?;
 
         if config.commands.contains_key(&name) {
             let override_existing = Confirm::new(&format!(
