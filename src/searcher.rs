@@ -2,9 +2,11 @@ use ignore::WalkBuilder;
 use indicatif::{ProgressBar, ProgressStyle};
 use inquire::Select;
 use similar_string::compare_similarity;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{channel, Receiver};
+use std::sync::Arc;
+use std::thread;
 
 #[derive(Debug)]
 struct FileInfo {
@@ -29,11 +31,10 @@ fn calculate_similarity(search_term: &str, filename: &str) -> f64 {
     name_similarity + contains_score
 }
 
-fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Vec<FileInfo> {
-    // Starting directory
-    let dir = Path::new("C:\\");
+fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
+    let (sender, receiver) = channel::<FileInfo>();
 
-    // Excluded directories
+    let dir = Path::new("C:\\");
     let excluded_dirs = vec![
         "C:\\Windows",
         "C:\\Windows.old",
@@ -44,87 +45,85 @@ fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Vec<FileInfo> {
         "C:\\Program Files (x86)\\Windows",
     ];
 
-    // Results collection with pre-allocated capacity for performance
-    let results = Arc::new(Mutex::new(Vec::with_capacity(350_000)));
-
-    let file_count = Arc::new(AtomicUsize::new(0));
-
-    // Progress bar setup
+    // Setup progress bar
     let progress_bar = ProgressBar::new_spinner();
     let progress_style = ProgressStyle::default_spinner()
         .template("{spinner:.green} [{elapsed_precise}] {msg}")
         .unwrap()
         .tick_strings(&["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]);
-
     progress_bar.set_style(progress_style);
     progress_bar.enable_steady_tick(std::time::Duration::from_millis(100));
     progress_bar.set_message("Collecting files...");
+    let file_count = Arc::new(AtomicUsize::new(0));
 
-    // Helper function to check if path is excluded
     fn is_excluded(entry: &ignore::DirEntry, excluded: &[&str]) -> bool {
         let path = entry.path();
-        !excluded.iter().any(|ex| path.starts_with(ex))
+        !excluded.iter().any(|ex| path.starts_with(Path::new(ex)))
     }
 
+    // Build the walker with parallel processing
     let walker = WalkBuilder::new(dir)
         .max_depth(Some(10))
         .same_file_system(true)
         .git_ignore(true)
         .hidden(true)
-        .threads(num_cpus::get() * 2) // Use twice the number of CPUs for more parallelism
+        .threads(num_cpus::get() * 2)
         .filter_entry(move |entry| is_excluded(entry, &excluded_dirs))
         .build_parallel();
 
-    // Run parallel walker
-    walker.run(|| {
-        let local_results = Arc::clone(&results);
-        let local_file_count = Arc::clone(&file_count);
-        let progress_bar = progress_bar.clone();
-        let local_search_term = search_term.to_string();
-        let local_exts = exts.clone();
+    // Clone variables needed inside the spawned thread
+    let search_term = search_term.to_string();
+    let exts = exts.clone();
+    let file_count_clone = Arc::clone(&file_count);
+    let progress_bar_clone = progress_bar.clone();
 
-        Box::new(move |result| {
-            let files_so_far = local_file_count.load(Ordering::Relaxed);
-            // Update progress periodically
-            if files_so_far % 1000 == 0 {
-                progress_bar.set_message(format!("Collecting files - Found {}", files_so_far));
-            }
+    // Spawn a thread to run the walker concurrently
+    thread::spawn(move || {
+        walker.run(|| {
+            // Clone for each worker thread
+            let sender = sender.clone();
+            let file_count = Arc::clone(&file_count_clone);
+            let search_term = search_term.clone();
+            let exts = exts.clone();
+            let progress_bar = progress_bar_clone.clone();
 
-            if let Ok(entry) = result {
-                // Only process files, not directories
-                if entry.file_type().map_or(false, |ft| ft.is_file()) {
-                    // Increase file counter
-                    local_file_count.fetch_add(1, Ordering::Relaxed);
+            Box::new(move |result| {
+                let files_so_far = file_count.load(Ordering::Relaxed);
+                if files_so_far % 1000 == 0 {
+                    progress_bar.set_message(format!("Collecting files - Found {}", files_so_far));
+                }
 
-                    let path = entry.path().to_path_buf();
-                    if let Some(ext) = path.extension() {
-                        let ext = ext.to_string_lossy().to_lowercase();
-                        if local_exts.contains(&ext) {
-                            let path = path.to_string_lossy().to_string();
-                            let similarity = calculate_similarity(&local_search_term, &path);
-                            if similarity > 0.3 {
-                                // Add to results
-                                let mut results = local_results.lock().unwrap();
-                                results.push(FileInfo {
-                                    path,
-                                    score: similarity,
-                                });
+                if let Ok(entry) = result {
+                    // Only process files (not directories)
+                    if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                        file_count.fetch_add(1, Ordering::Relaxed);
+                        let path: PathBuf = entry.path().to_path_buf();
+                        if let Some(ext) = path.extension() {
+                            let ext = ext.to_string_lossy().to_lowercase();
+                            if exts.contains(&ext) {
+                                let path_str = path.to_string_lossy().to_string();
+                                let similarity = calculate_similarity(&search_term, &path_str);
+                                if similarity > 0.3 {
+                                    // Send matching file info; ignore send errors if the receiver is dropped
+                                    let _ = sender.send(FileInfo {
+                                        path: path_str,
+                                        score: similarity,
+                                    });
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            ignore::WalkState::Continue
-        })
+                ignore::WalkState::Continue
+            })
+        });
+        progress_bar_clone.finish_with_message(format!(
+            "Finished collecting {} files",
+            file_count_clone.load(Ordering::Relaxed)
+        ));
     });
 
-    // Get final counts
-    let final_file_count = file_count.load(Ordering::Relaxed);
-    progress_bar.finish_with_message(format!("Finished collecting {} files", final_file_count));
-
-    let final_results = Arc::try_unwrap(results).unwrap().into_inner().unwrap();
-    final_results
+    receiver
 }
 
 pub fn prompt_fzf(
@@ -133,7 +132,8 @@ pub fn prompt_fzf(
     prompt: &str,
     exts: Vec<String>,
 ) -> String {
-    let mut opts = search_fuzzy(search_term, exts);
+    // Collect the results from the channel iterator.
+    let mut opts: Vec<FileInfo> = search_fuzzy(search_term, exts).into_iter().collect();
     opts.sort_by(|a, b| {
         b.score
             .partial_cmp(&a.score)
@@ -141,12 +141,10 @@ pub fn prompt_fzf(
     });
     opts.truncate(max_results);
 
-    let opts = opts.iter().map(|f| f.path.clone()).collect();
-    let select = Select::new(prompt, opts)
+    let opts = opts.into_iter().map(|f| f.path).collect();
+    Select::new(prompt, opts)
         .without_filtering()
         .with_vim_mode(true)
         .prompt()
-        .unwrap();
-
-    select
+        .unwrap()
 }
