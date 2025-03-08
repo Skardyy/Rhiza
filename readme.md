@@ -22,9 +22,25 @@
   * [Run](#Run)
 
 ## Installation🔧
+<details>
+<summary>via cargo</summary>
+
 ```sh
 cargo install rhiza
 ```
+</details>
+<details>
+<summary>via winget</summary>
+
+```sh
+winget install skardyy.rhiza
+```
+</details>
+<details>
+<summary>via installer</summary>
+
+> install and run the .msi installer from [here](https://github.com/Skardyy/rhiza/releases/latest)
+</details>
 
 ## Usage💡
 ### Crawl
