@@ -5,12 +5,14 @@
 # Rhiza
 ![Downloads](https://img.shields.io/crates/d/rhiza?style=for-the-badge) ![Version](https://img.shields.io/crates/v/rhiza?style=for-the-badge)  
 
+Rhiza is a simple and
+easy-to-use tool to create shortcuts and add entries to the path.
+
+from crawling with strict filtering, to hands down system-wide search for a name you want to find. don't let those apps hide from you anymore!
+
+***Rhiza is for windows only***
+
 </div>
-
-
-> [!Note]
-> Rhiza is for windows only  
-> linux has better options already
 
 ## Installation🔧
 <details>
