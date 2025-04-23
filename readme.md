@@ -1,25 +1,16 @@
-<h1 align="center">Rhiza</h1>
-<p align="center">A blazingly fast app linker</p>
 <div align="center">
+  
+<img src="https://github.com/user-attachments/assets/19a6ec4f-05ae-4655-8973-1beddb59e36b" width="256"/>
 
-[![Static Badge](https://img.shields.io/badge/crates.io-1e2029?style=flat&logo=rust&logoColor=f74b00&label=find%20at&labelColor=15161b)](https://crates.io/crates/rhiza)
+# Rhiza
+![Downloads](https://img.shields.io/crates/d/rhiza?style=for-the-badge) ![Version](https://img.shields.io/crates/v/rhiza?style=for-the-badge)  
+
 </div>
 
----
 
 > [!Note]
 > Rhiza is for windows only  
 > linux has better options already
-
-### Table of Content  
-* [Installation](#Installation)
-* [Usage](#Usage)
-  * [Crawl](#Crawl)
-  * [Add](#Add)
-  * [Path](#Path)
-  * [View](#View)
-  * [Edit](#Edit)
-  * [Run](#Run)
 
 ## Installation🔧
 <details>
