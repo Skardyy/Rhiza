@@ -70,7 +70,7 @@ fn search_fuzzy(search_term: &str, exts: Vec<String>) -> Receiver<FileInfo> {
     let walker = WalkBuilder::new(dir)
         .max_depth(Some(10))
         .same_file_system(true)
-        .git_ignore(true)
+        .git_ignore(false)
         .hidden(true)
         .threads(num_cpus::get() * 2)
         .filter_entry(move |entry| is_excluded(entry, &excluded_dirs))
