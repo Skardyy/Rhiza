@@ -8,7 +8,7 @@
 Rhiza is a simple and
 easy-to-use tool to create shortcuts and add entries to the path.
 
-from crawling with strict filtering, to hands down system-wide search for a name you want to find. don't let those apps hide from you anymore!
+easily create shortcuts / add applications into your path and windows menu!
 
 ***Rhiza is for windows only***
 
@@ -61,14 +61,14 @@ rhz crawl "/PATH/TO/DIR"
 ### Add
 you can search for a single app across the entire file-system (ignores hidden folders and Windows/Microsoft ones)
 ```sh
-rhz add NAME
+rhz add
 ```
 https://github.com/user-attachments/assets/e3010698-b8d9-49d6-b820-4c173e914a4f
 
 ### Path  
 same as add ~ just for adding into path  
 ```sh
-rhz path NAME
+rhz path
 ```  
 https://github.com/user-attachments/assets/09e8ebe3-89b9-4ee0-b908-40265935518b
 
@@ -86,15 +86,15 @@ rhz view
 ```
 it will print it in a formatted json
 
+### Remove
+removes a key added by rhiza.
+* removes it completely from rhiza config and the path
+* removes it from the windows menu too
+```
+rhz rm
+```
+it will print it in a formatted json
 
-### Edit
-or maybe you want to edit the config
-```
-rhz edit
-```
-it will open the ~/.rhiza/ folder where you can:  
-* edit the config to not automatically re add the deleted items  
-* delete the url/lnk file from the src dir (after doing `rhz run` the shell and menu links will be removed as well)
 
 ### Run
 finally you can create the lnk files using

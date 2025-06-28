@@ -209,6 +209,48 @@ pub fn run() -> io::Result<()> {
     Ok(())
 }
 
+pub fn remove_key(key: &str) -> io::Result<()> {
+    let rhiza_src = tilde("~\\.rhiza\\src").to_string();
+    let rhiza_bin = tilde("~\\.rhiza\\bin").to_string();
+    let start_menu = format!(
+        "{}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\rhiza",
+        shellexpand::tilde("~").to_string()
+    );
+
+    // Remove from src directory (could be .url, .lnk files)
+    remove_from_directory(&rhiza_src, key)?;
+
+    // Remove from bin directory (.bat files)
+    remove_from_directory(&rhiza_bin, key)?;
+
+    // Remove from start menu
+    remove_from_directory(&start_menu, key)?;
+
+    println!("{} {}", "Removed".red(), key.bold());
+    Ok(())
+}
+
+fn remove_from_directory(dir: &str, key: &str) -> io::Result<()> {
+    let dir_path = Path::new(dir);
+    if !dir_path.exists() {
+        return Ok(());
+    }
+
+    // Common file extensions that might exist for this key
+    let extensions = ["url", "lnk", "bat"];
+
+    for ext in &extensions {
+        let filename = format!("{}.{}", key, ext);
+        let file_path = dir_path.join(&filename);
+        if file_path.exists() {
+            fs::remove_file(&file_path)?;
+            println!("  {} {}", "Deleted".yellow(), file_path.display());
+        }
+    }
+
+    Ok(())
+}
+
 fn clean_dir(target: &Path) -> io::Result<()> {
     if !target.exists() {
         fs::create_dir_all(target)?;

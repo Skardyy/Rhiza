@@ -2,7 +2,7 @@ mod installer;
 mod searcher;
 mod worker;
 
-use std::path::Path;
+use std::{path::Path, sync::mpsc::channel};
 
 use clap::{
     builder::{styling::AnsiColor, Styles},
@@ -10,6 +10,7 @@ use clap::{
 };
 use colored::*;
 use inquire::Text;
+use searcher::prompt_fzf;
 
 fn main() {
     installer::setup_panic_logging();
@@ -22,42 +23,16 @@ fn main() {
                 .header(AnsiColor::Green.on_default().bold())
                 .literal(AnsiColor::Blue.on_default()),
         )
-        .subcommand(
-            Command::new("crawl")
-                .about("Find potential apps to link")
-                .arg(
-                    Arg::new("path")
-                        .index(1)
-                        .value_name("PATH")
-                        .required(false)
-                        .help("Specify a directory to crawl"),
-                ),
-        )
-        .subcommand(
-            Command::new("add")
-                .about("Search for a single app to add")
-                .arg(
-                    Arg::new("name")
-                        .index(1)
-                        .value_name("NAME")
-                        .help("name of the app to search for")
-                        .required(false),
-                ),
-        )
-        .subcommand(
-            Command::new("path")
-                .about("Search for a single app to add to path")
-                .arg(
-                    Arg::new("name")
-                        .index(1)
-                        .value_name("NAME")
-                        .help("name of the app to search for")
-                        .required(false),
-                ),
-        )
-        .subcommand(Command::new("view").about("View all linked apps and their config"))
-        .subcommand(Command::new("edit").about("Edit the config"))
+        .subcommand(Command::new("crawl").about("Find potential apps to link"))
+        .subcommand(Command::new("add").about("Search for a single app to add"))
+        .subcommand(Command::new("path").about("Search for a single app to add to path"))
+        .subcommand(Command::new("rm").about("Removed an key added by rhiza"))
         .subcommand(Command::new("run").about("Create the lnk files"))
+        .subcommand(Command::new("view").about("View all linked apps and their config"))
+        .subcommand(
+            Command::new("clear-skipped")
+                .about("Clear the skipped config created the the crawl command"),
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -76,13 +51,10 @@ fn main() {
             let _ = worker::crawl_directory(dirs);
             println!("{}", "Do 'rhz run' to apply the changes".purple().bold())
         }
-        Some(("add", subcommand)) => {
+        Some(("add", _)) => {
             let mut config = installer::check().unwrap();
-            let name = subcommand.get_one::<String>("name");
 
-            let res = searcher::prompt_fzf(
-                name,
-                7,
+            let res = searcher::search_prompt_fzf(
                 "Select app to add:\n",
                 vec!["exe".to_string(), "lnk".to_string(), "url".to_string()],
             );
@@ -95,12 +67,8 @@ fn main() {
                 }
             }
         }
-        Some(("path", subcommand)) => {
-            let name = subcommand.get_one::<String>("name");
-
-            let res = searcher::prompt_fzf(
-                name,
-                7,
+        Some(("path", _)) => {
+            let res = searcher::search_prompt_fzf(
                 "Select path to add:\n",
                 vec!["ps1".to_string(), "exe".to_string()],
             );
@@ -118,16 +86,28 @@ fn main() {
             let content = serde_json::to_string_pretty(&config.commands).unwrap();
             println!("{}", content)
         }
-        Some(("edit", _)) => {
-            installer::check().unwrap();
-            let path = shellexpand::tilde("~\\.rhiza").to_string();
-            std::process::Command::new("explorer")
-                .arg(path)
-                .spawn()
-                .unwrap();
+        Some(("rm", _)) => {
+            let mut config = installer::check().unwrap();
+            let items: Vec<String> = config.commands.keys().cloned().collect();
+            let (tx, rx) = channel::<String>();
+            for item in items {
+                tx.send(item).unwrap();
+            }
+            drop(tx);
+            let key = prompt_fzf(rx, "Select key to remove").expect("Failed to get key for rm");
+
+            worker::remove_key(&key).unwrap();
+            config.commands.remove(&key);
+            config.write().unwrap();
         }
         Some(("run", _)) => {
             worker::run().unwrap();
+        }
+        Some(("clear-skipped", _)) => {
+            let mut config = installer::check().unwrap();
+            config.skipped.clear();
+            config.write().unwrap();
+            println!("Cleared!")
         }
         _ => {
             println!("No subcommand was used. Use --help for more information.");
