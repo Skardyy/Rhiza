@@ -9,12 +9,6 @@ use std::sync::mpsc::{channel, Receiver};
 use std::sync::Arc;
 use std::thread;
 
-#[derive(Debug)]
-struct FileInfo {
-    path: String,
-    score: f64,
-}
-
 fn search_fuzzy(exts: Vec<String>, silent: bool) -> Receiver<String> {
     let (sender, receiver) = channel::<String>();
 

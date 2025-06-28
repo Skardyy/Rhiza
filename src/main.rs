@@ -6,7 +6,7 @@ use std::{path::Path, sync::mpsc::channel};
 
 use clap::{
     builder::{styling::AnsiColor, Styles},
-    Arg, ColorChoice, Command,
+    ColorChoice, Command,
 };
 use colored::*;
 use inquire::Text;
