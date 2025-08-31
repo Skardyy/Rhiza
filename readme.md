@@ -93,8 +93,6 @@ removes a key added by rhiza.
 ```
 rhz rm
 ```
-it will print it in a formatted json
-
 
 ### Run
 finally you can create the lnk files using
