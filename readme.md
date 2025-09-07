@@ -107,8 +107,3 @@ it will create the bin and src files and allow you to use your shortcuts in the 
 > did you know?  
 > Rhiza means "Root" in greek 🌱🌿  
 > rooting those apps for you  
-
-<br/>
-<div align="right">
-   🦆
-</div>
