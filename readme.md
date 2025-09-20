@@ -14,7 +14,7 @@ easily create shortcuts / add applications into your path and windows menu!
 
 </div>
 
-## 🛠️ Installation
+## Installation
 <details>
 <summary>via cargo</summary>
 
@@ -35,7 +35,7 @@ winget install skardyy.rhiza
 > install and run the .msi installer from [here](https://github.com/Skardyy/rhiza/releases/latest)
 </details>
 
-## 🚀 Usage
+## Usage
 ### Crawl
 ```sh
 rhz crawl
@@ -105,5 +105,5 @@ it will create the bin and src files and allow you to use your shortcuts in the 
   
 > [!Tip]
 > did you know?  
-> Rhiza means "Root" in greek 🌱🌿  
+> Rhiza means "Root" in greek  
 > rooting those apps for you  
